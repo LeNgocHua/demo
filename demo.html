@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Đăng ký</title>
+      <script type = "text/javascript">
+         function validateForm()  {
+             var u = document.getElementById("email").value;
+             var p = document.getElementById("password").value;
+ 
+             if(u== "") {
+                 alert("Không được để trống email");
+                 return false;
+             }
+             if(p == "") {
+                 alert("Please enter you Password");
+                 return false;
+             }
+             if(p => "6") {
+                 alert("Password phải 6 ký tự trở lên");
+                 return false;
+             }
+ 
+             return true;
+         }
+      </script>
+   </head>
+   <body>
+      <div>
+         <form method="GET" action="process-action.html" onsubmit = "return validateForm()">
+            Email: <input type="mail" name="email" id="email"/>
+            <br><br>
+            Password: <input type="password" name = "password" id="password"/>
+            <br><br>
+            <button type="submit">Submit</button>
+         </form>
+      </div>
+ 
+   </body>
+</html>
