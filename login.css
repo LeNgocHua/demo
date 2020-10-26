@@ -1,0 +1,29 @@
+.body{
+    width: 1024px;
+}
+.form-login{
+    width: 400px;
+    border: 1px silver solid;
+    text-align: center;
+    font-size: 16px;
+}
+.add-input{
+    height: 20px;
+    width: 300px;
+    margin: 5px;
+    padding: 8px;
+    border-radius: 10px;
+}
+.add-submit{
+    background: lightcoral;
+    border-radius: 5px;
+    padding: 8px;
+    margin: 10px;
+    width: 100px;
+}
+.add-submit:hover{
+    background: lightgreen;
+}
+.err{
+    color: red;
+}
