@@ -12,10 +12,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+require_once __DIR__ . '/includes/class-presets.php';
+
 class WP_Huadev_Envelope {
     const OPTION_KEY = 'wp_huadev_envelope_options';
 
     public static function init() {
+        register_activation_hook(__FILE__, [__CLASS__, 'activate']);
         add_action('init', [__CLASS__, 'register_shortcodes']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('admin_menu', [__CLASS__, 'register_admin_page']);
@@ -41,6 +44,27 @@ class WP_Huadev_Envelope {
         return wp_parse_args(is_array($saved) ? $saved : [], $defaults);
     }
 
+    public static function activate() {
+        // Create custom table for presets
+        WP_Huadev_Envelope_Presets::create_table();
+        // Ensure a default preset exists using current options
+        $opts = self::get_options();
+        $exists = WP_Huadev_Envelope_Presets::find_by_slug('default');
+        if (!$exists) {
+            WP_Huadev_Envelope_Presets::create([
+                'slug' => 'default',
+                'name' => 'Default',
+                'bg_color' => $opts['bg_color'],
+                'envelope_color' => $opts['envelope_color'],
+                'pocket_color1' => $opts['pocket_color1'],
+                'pocket_color2' => $opts['pocket_color2'],
+                'seal_emoji' => $opts['seal_emoji'],
+                'image_url' => $opts['image_url'],
+                'float' => $opts['float'] ? 1 : 0,
+            ]);
+        }
+    }
+
     public static function register_shortcodes() {
         add_shortcode('huadev_envelope', [__CLASS__, 'render_shortcode']);
     }
@@ -56,6 +80,7 @@ class WP_Huadev_Envelope {
         $opts = self::get_options();
 
         $atts = shortcode_atts([
+            'slug' => '',
             'bg_color' => $opts['bg_color'],
             'envelope_color' => $opts['envelope_color'],
             'pocket_color1' => $opts['pocket_color1'],
@@ -64,6 +89,20 @@ class WP_Huadev_Envelope {
             'image_url' => $opts['image_url'],
             'float' => $opts['float'] ? '1' : '0',
         ], $atts, 'huadev_envelope');
+
+        // If a preset slug is provided, override with preset values
+        if (!empty($atts['slug'])) {
+            $preset = WP_Huadev_Envelope_Presets::find_by_slug($atts['slug']);
+            if ($preset) {
+                $atts['bg_color'] = $preset['bg_color'];
+                $atts['envelope_color'] = $preset['envelope_color'];
+                $atts['pocket_color1'] = $preset['pocket_color1'];
+                $atts['pocket_color2'] = $preset['pocket_color2'];
+                $atts['seal_emoji'] = $preset['seal_emoji'];
+                $atts['image_url'] = $preset['image_url'];
+                $atts['float'] = $preset['float'] ? '1' : '0';
+            }
+        }
 
         wp_enqueue_style('huadev-envelope');
         wp_enqueue_script('huadev-envelope');
@@ -74,12 +113,14 @@ class WP_Huadev_Envelope {
     }
 
     public static function register_admin_page() {
-        add_options_page(
+        add_menu_page(
             __('Huadev Envelope', 'wp-huadev-envelope'),
             __('Huadev Envelope', 'wp-huadev-envelope'),
             'manage_options',
             'wp-huadev-envelope',
-            [__CLASS__, 'render_admin_page']
+            [__CLASS__, 'render_admin_page'],
+            'dashicons-email-alt2',
+            56
         );
     }
 
@@ -153,25 +194,118 @@ class WP_Huadev_Envelope {
     }
 
     public static function render_admin_page() {
+        // Handle create/update submit
+        $notice = '';
+        if (isset($_POST['wp_huadev_envelope_nonce']) && wp_verify_nonce($_POST['wp_huadev_envelope_nonce'], 'save_preset') && current_user_can('manage_options')) {
+            $data = [
+                'slug' => isset($_POST['preset']['slug']) ? wp_unslash($_POST['preset']['slug']) : '',
+                'name' => isset($_POST['preset']['name']) ? wp_unslash($_POST['preset']['name']) : '',
+                'bg_color' => isset($_POST['preset']['bg_color']) ? wp_unslash($_POST['preset']['bg_color']) : '',
+                'envelope_color' => isset($_POST['preset']['envelope_color']) ? wp_unslash($_POST['preset']['envelope_color']) : '',
+                'pocket_color1' => isset($_POST['preset']['pocket_color1']) ? wp_unslash($_POST['preset']['pocket_color1']) : '',
+                'pocket_color2' => isset($_POST['preset']['pocket_color2']) ? wp_unslash($_POST['preset']['pocket_color2']) : '',
+                'seal_emoji' => isset($_POST['preset']['seal_emoji']) ? wp_unslash($_POST['preset']['seal_emoji']) : '',
+                'image_url' => isset($_POST['preset']['image_url']) ? wp_unslash($_POST['preset']['image_url']) : '',
+                'float' => isset($_POST['preset']['float']) ? 1 : 0,
+            ];
+            $exists = WP_Huadev_Envelope_Presets::find_by_slug($data['slug']);
+            if ($exists) {
+                $res = WP_Huadev_Envelope_Presets::update_by_slug($data['slug'], $data);
+                $notice = is_wp_error($res) ? $res->get_error_message() : __('Preset updated.', 'wp-huadev-envelope');
+            } else {
+                $res = WP_Huadev_Envelope_Presets::create($data);
+                $notice = is_wp_error($res) ? $res->get_error_message() : __('Preset created.', 'wp-huadev-envelope');
+            }
+        }
+
+        $presets = WP_Huadev_Envelope_Presets::all();
+        $endpoint_base = rest_url('huadev/v1/presets');
         ?>
         <div class="wrap">
-            <h1><?php echo esc_html__('Huadev Envelope Settings', 'wp-huadev-envelope'); ?></h1>
-            <form method="post" action="options.php">
-                <?php
-                settings_fields('wp_huadev_envelope_group');
-                do_settings_sections('wp-huadev-envelope');
-                submit_button();
-                ?>
+            <h1><?php echo esc_html__('Huadev Envelope Presets', 'wp-huadev-envelope'); ?></h1>
+            <?php if ($notice): ?>
+                <div class="notice notice-success"><p><?php echo esc_html($notice); ?></p></div>
+            <?php endif; ?>
+
+            <h2><?php echo esc_html__('Add / Update Preset', 'wp-huadev-envelope'); ?></h2>
+            <form method="post">
+                <?php wp_nonce_field('save_preset', 'wp_huadev_envelope_nonce'); ?>
+                <table class="form-table" role="presentation">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><label for="preset_slug">Slug</label></th>
+                            <td><input name="preset[slug]" id="preset_slug" type="text" class="regular-text" required /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="preset_name">Name</label></th>
+                            <td><input name="preset[name]" id="preset_name" type="text" class="regular-text" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label>Background Color</label></th>
+                            <td><input name="preset[bg_color]" type="text" class="regular-text" placeholder="#f8f4f2" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label>Envelope Color</label></th>
+                            <td><input name="preset[envelope_color]" type="text" class="regular-text" placeholder="#812927" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label>Pocket Color 1</label></th>
+                            <td><input name="preset[pocket_color1]" type="text" class="regular-text" placeholder="#a33f3d" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label>Pocket Color 2</label></th>
+                            <td><input name="preset[pocket_color2]" type="text" class="regular-text" placeholder="#a84644" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label>Seal Emoji</label></th>
+                            <td><input name="preset[seal_emoji]" type="text" class="regular-text" placeholder="💍" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label>Image URL</label></th>
+                            <td><input name="preset[image_url]" type="url" class="regular-text" placeholder="https://..." /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label>Float Animation</label></th>
+                            <td><label><input name="preset[float]" type="checkbox" value="1" checked /> <?php echo esc_html__('Enable', 'wp-huadev-envelope'); ?></label></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <?php submit_button(__('Save Preset', 'wp-huadev-envelope')); ?>
             </form>
 
-            <h2><?php echo esc_html__('Embed', 'wp-huadev-envelope'); ?></h2>
-            <p><?php echo esc_html__('Use this script tag to embed on any site:', 'wp-huadev-envelope'); ?></p>
-            <textarea readonly rows="4" style="width:100%;" onclick="this.select()">&lt;script src="<?php echo esc_url(plugins_url('assets/js/embed.js', __FILE__)); ?>" data-endpoint="<?php echo esc_url(rest_url('huadev/v1/options')); ?>"&gt;&lt;/script&gt;</textarea>
+            <h2><?php echo esc_html__('Existing Presets', 'wp-huadev-envelope'); ?></h2>
+            <?php if (empty($presets)): ?>
+                <p><?php echo esc_html__('No presets yet. Create one above.', 'wp-huadev-envelope'); ?></p>
+            <?php else: ?>
+                <table class="widefat striped">
+                    <thead>
+                        <tr>
+                            <th><?php echo esc_html__('Slug', 'wp-huadev-envelope'); ?></th>
+                            <th><?php echo esc_html__('Name', 'wp-huadev-envelope'); ?></th>
+                            <th><?php echo esc_html__('Shortcode', 'wp-huadev-envelope'); ?></th>
+                            <th><?php echo esc_html__('Embed Snippet', 'wp-huadev-envelope'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($presets as $p): ?>
+                            <tr>
+                                <td><code><?php echo esc_html($p['slug']); ?></code></td>
+                                <td><?php echo esc_html($p['name']); ?></td>
+                                <td><code>[huadev_envelope slug="<?php echo esc_attr($p['slug']); ?>"]</code></td>
+                                <td>
+                                    <textarea readonly rows="2" style="width:100%;" onclick="this.select()">&lt;script src="<?php echo esc_url(plugins_url('assets/js/embed.js', __FILE__)); ?>" data-preset="<?php echo esc_attr($p['slug']); ?>" data-endpoint="<?php echo esc_url($endpoint_base); ?>"&gt;&lt;/script&gt;</textarea>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
         <?php
     }
 
     public static function register_rest() {
+        // Back-compat endpoint returning global options
         register_rest_route('huadev/v1', '/options', [
             'methods' => 'GET',
             'callback' => function() {
@@ -180,6 +314,33 @@ class WP_Huadev_Envelope {
                     'success' => true,
                     'data' => $opts,
                 ]);
+            },
+            'permission_callback' => '__return_true',
+        ]);
+
+        // List presets (admin)
+        register_rest_route('huadev/v1', '/presets', [
+            'methods' => 'GET',
+            'callback' => function(WP_REST_Request $req) {
+                if (!current_user_can('manage_options')) {
+                    return new WP_Error('forbidden', __('Unauthorized', 'wp-huadev-envelope'), ['status' => 403]);
+                }
+                $items = WP_Huadev_Envelope_Presets::all();
+                return rest_ensure_response(['success' => true, 'data' => $items]);
+            },
+            'permission_callback' => '__return_true',
+        ]);
+
+        // Get preset by slug (public)
+        register_rest_route('huadev/v1', '/presets/(?P<slug>[a-z0-9\-]+)', [
+            'methods' => 'GET',
+            'callback' => function(WP_REST_Request $req) {
+                $slug = $req->get_param('slug');
+                $item = WP_Huadev_Envelope_Presets::find_by_slug($slug);
+                if (!$item) {
+                    return new WP_Error('not_found', __('Preset not found', 'wp-huadev-envelope'), ['status' => 404]);
+                }
+                return rest_ensure_response(['success' => true, 'data' => $item]);
             },
             'permission_callback' => '__return_true',
         ]);

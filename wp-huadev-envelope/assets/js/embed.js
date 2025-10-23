@@ -1,6 +1,7 @@
 (function(){
   var script = document.currentScript;
-  var endpoint = script && script.getAttribute('data-endpoint');
+  var endpoint = script && script.getAttribute('data-endpoint'); // can be base e.g. https://site.com/wp-json/huadev/v1/presets
+  var presetSlug = script && script.getAttribute('data-preset');
   var bg = script && script.getAttribute('data-bg');
   var env = script && script.getAttribute('data-envelope');
   var p1 = script && script.getAttribute('data-pocket1');
@@ -91,7 +92,12 @@
 
   function fetchOptions(){
     if (!endpoint) return Promise.resolve(null);
-    return fetch(endpoint, { credentials: 'omit' })
+    var url = endpoint;
+    if (presetSlug && !/\/presets\//.test(url)) {
+      if (url[url.length - 1] === '/') url = url.slice(0, -1);
+      url = url + '/' + encodeURIComponent(presetSlug);
+    }
+    return fetch(url, { credentials: 'omit' })
       .then(function(r){ return r.json(); })
       .then(function(j){ return j && j.data ? j.data : null; })
       .catch(function(){ return null; });
