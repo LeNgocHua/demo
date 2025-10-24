@@ -233,87 +233,61 @@ class WP_Huadev_Envelope {
             }
         }
 
-        $presets = WP_Huadev_Envelope_Presets::all();
         $endpoint_base = rest_url('huadev/v1/presets');
+        $editing = null;
+        $view = 'list';
+        if (isset($_GET['slug']) && is_string($_GET['slug'])) {
+            $slug_q = sanitize_title(wp_unslash($_GET['slug']));
+            if ($slug_q) {
+                $editing = WP_Huadev_Envelope_Presets::find_by_slug($slug_q);
+                $view = 'edit';
+            }
+        } elseif (isset($_GET['action']) && $_GET['action'] === 'new') {
+            $view = 'new';
+        }
+
+        $presets = WP_Huadev_Envelope_Presets::all();
+        $list_url = esc_url( add_query_arg(['page' => 'wp-huadev-envelope'], admin_url('admin.php')) );
+        $new_url = esc_url( add_query_arg(['page' => 'wp-huadev-envelope', 'action' => 'new'], admin_url('admin.php')) );
         ?>
         <div class="wrap">
-            <h1><?php echo esc_html__('Huadev Envelope Presets', 'wp-huadev-envelope'); ?></h1>
+            <h1 class="wp-heading-inline"><?php echo esc_html__('Huadev Envelope Presets', 'wp-huadev-envelope'); ?></h1>
+            <?php if ($view === 'list'): ?>
+                <a href="<?php echo $new_url; ?>" class="page-title-action"><?php echo esc_html__('Add New', 'wp-huadev-envelope'); ?></a>
+            <?php else: ?>
+                <a href="<?php echo $list_url; ?>" class="page-title-action"><?php echo esc_html__('Back to list', 'wp-huadev-envelope'); ?></a>
+            <?php endif; ?>
+            <hr class="wp-header-end" />
+
             <?php if ($notice): ?>
-                <div class="notice notice-success"><p><?php echo esc_html($notice); ?></p></div>
+                <div class="notice notice-success is-dismissible"><p><?php echo esc_html($notice); ?></p></div>
             <?php endif; ?>
 
-            <h2><?php echo esc_html__('Add / Update Preset', 'wp-huadev-envelope'); ?></h2>
-            <form method="post">
-                <?php wp_nonce_field('save_preset', 'wp_huadev_envelope_nonce'); ?>
-                <table class="form-table" role="presentation">
-                    <tbody>
-                        <tr>
-                            <th scope="row"><label for="preset_slug">Slug</label></th>
-                            <td><input name="preset[slug]" id="preset_slug" type="text" class="regular-text" required /></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="preset_name">Name</label></th>
-                            <td><input name="preset[name]" id="preset_name" type="text" class="regular-text" /></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label>Background Color</label></th>
-                            <td><input name="preset[bg_color]" type="text" class="regular-text" placeholder="#f8f4f2" /></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label>Envelope Color</label></th>
-                            <td><input name="preset[envelope_color]" type="text" class="regular-text" placeholder="#812927" /></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label>Pocket Color 1</label></th>
-                            <td><input name="preset[pocket_color1]" type="text" class="regular-text" placeholder="#a33f3d" /></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label>Pocket Color 2</label></th>
-                            <td><input name="preset[pocket_color2]" type="text" class="regular-text" placeholder="#a84644" /></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="preset_seal_url">Seal URL</label></th>
-                            <td>
-                                <input name="preset[seal_url]" id="preset_seal_url" type="url" class="regular-text" placeholder="https://..." />
-                                <button type="button" class="button huadev-media-button" data-target="preset_seal_url" data-preview="preset_seal_url_preview"><?php echo esc_html__('Select from Media', 'wp-huadev-envelope'); ?></button>
-                                <img id="preset_seal_url_preview" src="" alt="" style="max-width:48px; max-height:48px; margin-left:8px; display:none; border-radius:4px;" />
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="preset_image_url">Image URL</label></th>
-                            <td>
-                                <input name="preset[image_url]" id="preset_image_url" type="url" class="regular-text" placeholder="https://..." />
-                                <button type="button" class="button huadev-media-button" data-target="preset_image_url" data-preview="preset_image_url_preview"><?php echo esc_html__('Select from Media', 'wp-huadev-envelope'); ?></button>
-                                <img id="preset_image_url_preview" src="" alt="" style="max-width:64px; max-height:48px; margin-left:8px; display:none; border-radius:4px;" />
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label>Float Animation</label></th>
-                            <td><label><input name="preset[float]" type="checkbox" value="1" checked /> <?php echo esc_html__('Enable', 'wp-huadev-envelope'); ?></label></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <?php submit_button(__('Save Preset', 'wp-huadev-envelope')); ?>
-            </form>
-
-            <h2><?php echo esc_html__('Existing Presets', 'wp-huadev-envelope'); ?></h2>
-            <?php if (empty($presets)): ?>
-                <p><?php echo esc_html__('No presets yet. Create one above.', 'wp-huadev-envelope'); ?></p>
-            <?php else: ?>
-                <table class="widefat striped">
-                    <thead>
-                        <tr>
-                            <th><?php echo esc_html__('Slug', 'wp-huadev-envelope'); ?></th>
-                            <th><?php echo esc_html__('Name', 'wp-huadev-envelope'); ?></th>
-                            <th><?php echo esc_html__('Seal', 'wp-huadev-envelope'); ?></th>
-                            <th><?php echo esc_html__('Shortcode', 'wp-huadev-envelope'); ?></th>
-                            <th><?php echo esc_html__('Embed Snippet', 'wp-huadev-envelope'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($presets as $p): ?>
+            <?php if ($view === 'list'): ?>
+                <?php if (empty($presets)): ?>
+                    <p><?php echo esc_html__('No presets yet. Click "Add New" to create one.', 'wp-huadev-envelope'); ?></p>
+                <?php else: ?>
+                    <table class="wp-list-table widefat fixed striped table-view-list">
+                        <thead>
                             <tr>
-                                <td><code><?php echo esc_html($p['slug']); ?></code></td>
+                                <th><?php echo esc_html__('Slug', 'wp-huadev-envelope'); ?></th>
+                                <th><?php echo esc_html__('Name', 'wp-huadev-envelope'); ?></th>
+                                <th><?php echo esc_html__('Seal', 'wp-huadev-envelope'); ?></th>
+                                <th><?php echo esc_html__('Shortcode', 'wp-huadev-envelope'); ?></th>
+                                <th><?php echo esc_html__('Embed Snippet', 'wp-huadev-envelope'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody id="the-list">
+                        <?php foreach ($presets as $p):
+                            $edit_url = esc_url( add_query_arg(['page' => 'wp-huadev-envelope', 'slug' => $p['slug']], admin_url('admin.php')) );
+                        ?>
+                            <tr>
+                                <td class="column-primary">
+                                    <strong><a href="<?php echo $edit_url; ?>"><?php echo esc_html($p['slug']); ?></a></strong>
+                                    <div class="row-actions">
+                                        <span class="edit"><a href="<?php echo $edit_url; ?>"><?php echo esc_html__('Edit', 'wp-huadev-envelope'); ?></a></span>
+                                    </div>
+                                </td>
                                 <td><?php echo esc_html($p['name']); ?></td>
                                 <td>
                                     <?php if (!empty($p['seal_url'])): ?>
@@ -328,8 +302,72 @@ class WP_Huadev_Envelope {
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            <?php else: ?>
+                <?php
+                $is_edit = ($view === 'edit' && $editing);
+                $val = function($key, $default = '') use ($is_edit, $editing) {
+                    if ($is_edit && isset($editing[$key])) return $editing[$key];
+                    return $default;
+                };
+                ?>
+                <h2><?php echo $is_edit ? esc_html__('Edit Preset', 'wp-huadev-envelope') : esc_html__('Add New Preset', 'wp-huadev-envelope'); ?></h2>
+                <form method="post">
+                    <?php wp_nonce_field('save_preset', 'wp_huadev_envelope_nonce'); ?>
+                    <table class="form-table" role="presentation">
+                        <tbody>
+                            <tr>
+                                <th scope="row"><label for="preset_slug">Slug</label></th>
+                                <td>
+                                    <input name="preset[slug]" id="preset_slug" type="text" class="regular-text" required value="<?php echo esc_attr($val('slug')); ?>" <?php echo $is_edit ? 'readonly' : ''; ?> />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="preset_name">Name</label></th>
+                                <td><input name="preset[name]" id="preset_name" type="text" class="regular-text" value="<?php echo esc_attr($val('name')); ?>" /></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label>Background Color</label></th>
+                                <td><input name="preset[bg_color]" type="text" class="regular-text" placeholder="#f8f4f2" value="<?php echo esc_attr($val('bg_color')); ?>" /></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label>Envelope Color</label></th>
+                                <td><input name="preset[envelope_color]" type="text" class="regular-text" placeholder="#812927" value="<?php echo esc_attr($val('envelope_color')); ?>" /></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label>Pocket Color 1</label></th>
+                                <td><input name="preset[pocket_color1]" type="text" class="regular-text" placeholder="#a33f3d" value="<?php echo esc_attr($val('pocket_color1')); ?>" /></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label>Pocket Color 2</label></th>
+                                <td><input name="preset[pocket_color2]" type="text" class="regular-text" placeholder="#a84644" value="<?php echo esc_attr($val('pocket_color2')); ?>" /></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="preset_seal_url">Seal URL</label></th>
+                                <td>
+                                    <input name="preset[seal_url]" id="preset_seal_url" type="url" class="regular-text" placeholder="https://..." value="<?php echo esc_attr($val('seal_url')); ?>" />
+                                    <button type="button" class="button huadev-media-button" data-target="preset_seal_url" data-preview="preset_seal_url_preview"><?php echo esc_html__('Select from Media', 'wp-huadev-envelope'); ?></button>
+                                    <img id="preset_seal_url_preview" src="<?php echo esc_url($val('seal_url')); ?>" alt="" style="max-width:48px; max-height:48px; margin-left:8px; <?php echo $val('seal_url') ? '' : 'display:none;'; ?> border-radius:4px;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="preset_image_url">Image URL</label></th>
+                                <td>
+                                    <input name="preset[image_url]" id="preset_image_url" type="url" class="regular-text" placeholder="https://..." value="<?php echo esc_attr($val('image_url')); ?>" />
+                                    <button type="button" class="button huadev-media-button" data-target="preset_image_url" data-preview="preset_image_url_preview"><?php echo esc_html__('Select from Media', 'wp-huadev-envelope'); ?></button>
+                                    <img id="preset_image_url_preview" src="<?php echo esc_url($val('image_url')); ?>" alt="" style="max-width:64px; max-height:48px; margin-left:8px; <?php echo $val('image_url') ? '' : 'display:none;'; ?> border-radius:4px;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label>Float Animation</label></th>
+                                <td><label><input name="preset[float]" type="checkbox" value="1" <?php echo $val('float') ? 'checked' : ''; ?> /> <?php echo esc_html__('Enable', 'wp-huadev-envelope'); ?></label></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <?php submit_button($is_edit ? __('Update Preset', 'wp-huadev-envelope') : __('Create Preset', 'wp-huadev-envelope')); ?>
+                </form>
             <?php endif; ?>
         </div>
         <?php
