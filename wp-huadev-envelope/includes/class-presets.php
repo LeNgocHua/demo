@@ -21,6 +21,7 @@ class WP_Huadev_Envelope_Presets {
             pocket_color1 VARCHAR(20) NOT NULL DEFAULT '',
             pocket_color2 VARCHAR(20) NOT NULL DEFAULT '',
             seal_emoji VARCHAR(191) NOT NULL DEFAULT '',
+            seal_url TEXT,
             image_url TEXT,
             float_animation TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -40,6 +41,7 @@ class WP_Huadev_Envelope_Presets {
         $out['pocket_color1'] = isset($data['pocket_color1']) ? sanitize_hex_color($data['pocket_color1']) : '';
         $out['pocket_color2'] = isset($data['pocket_color2']) ? sanitize_hex_color($data['pocket_color2']) : '';
         $out['seal_emoji'] = isset($data['seal_emoji']) ? wp_kses_post($data['seal_emoji']) : '';
+        $out['seal_url'] = isset($data['seal_url']) ? esc_url_raw($data['seal_url']) : '';
         $out['image_url'] = isset($data['image_url']) ? esc_url_raw($data['image_url']) : '';
         $out['float_animation'] = isset($data['float']) ? (int) (bool) $data['float'] : (isset($data['float_animation']) ? (int) (bool) $data['float_animation'] : 1);
         return $out;
@@ -64,10 +66,11 @@ class WP_Huadev_Envelope_Presets {
             'pocket_color1' => $fields['pocket_color1'],
             'pocket_color2' => $fields['pocket_color2'],
             'seal_emoji' => $fields['seal_emoji'],
+            'seal_url' => $fields['seal_url'],
             'image_url' => $fields['image_url'],
             'float_animation' => $fields['float_animation'],
         ], [
-            '%s','%s','%s','%s','%s','%s','%s','%s','%d'
+            '%s','%s','%s','%s','%s','%s','%s','%s','%s','%d'
         ]);
         if (!$ok) {
             return new WP_Error('db_error', __('Failed to create preset', 'wp-huadev-envelope'));
@@ -87,11 +90,12 @@ class WP_Huadev_Envelope_Presets {
             'pocket_color1' => $fields['pocket_color1'],
             'pocket_color2' => $fields['pocket_color2'],
             'seal_emoji' => $fields['seal_emoji'],
+            'seal_url' => $fields['seal_url'],
             'image_url' => $fields['image_url'],
             'float_animation' => $fields['float_animation'],
             'updated_at' => current_time('mysql', 1),
         ], [ 'slug' => sanitize_title($slug) ], [
-            '%s','%s','%s','%s','%s','%s','%s','%d','%s'
+            '%s','%s','%s','%s','%s','%s','%s','%s','%d','%s'
         ], ['%s']);
         if ($ok === false) {
             return new WP_Error('db_error', __('Failed to update preset', 'wp-huadev-envelope'));
@@ -135,6 +139,7 @@ class WP_Huadev_Envelope_Presets {
             'pocket_color1' => $row['pocket_color1'] ?: '#a33f3d',
             'pocket_color2' => $row['pocket_color2'] ?: '#a84644',
             'seal_emoji' => $row['seal_emoji'] ?: '💍',
+            'seal_url' => !empty($row['seal_url']) ? $row['seal_url'] : '',
             'image_url' => $row['image_url'] ?: '',
             'float' => (bool) $row['float_animation'],
         ];

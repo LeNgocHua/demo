@@ -208,7 +208,7 @@ class WP_Huadev_Envelope {
                 'envelope_color' => isset($_POST['preset']['envelope_color']) ? wp_unslash($_POST['preset']['envelope_color']) : '',
                 'pocket_color1' => isset($_POST['preset']['pocket_color1']) ? wp_unslash($_POST['preset']['pocket_color1']) : '',
                 'pocket_color2' => isset($_POST['preset']['pocket_color2']) ? wp_unslash($_POST['preset']['pocket_color2']) : '',
-                'seal_emoji' => isset($_POST['preset']['seal_emoji']) ? wp_unslash($_POST['preset']['seal_emoji']) : '',
+                'seal_url' => isset($_POST['preset']['seal_url']) ? wp_unslash($_POST['preset']['seal_url']) : '',
                 'image_url' => isset($_POST['preset']['image_url']) ? wp_unslash($_POST['preset']['image_url']) : '',
                 'float' => isset($_POST['preset']['float']) ? 1 : 0,
             ];
@@ -261,8 +261,8 @@ class WP_Huadev_Envelope {
                             <td><input name="preset[pocket_color2]" type="text" class="regular-text" placeholder="#a84644" /></td>
                         </tr>
                         <tr>
-                            <th scope="row"><label>Seal Emoji</label></th>
-                            <td><input name="preset[seal_emoji]" type="text" class="regular-text" placeholder="💍" /></td>
+                            <th scope="row"><label>Seal URL</label></th>
+                            <td><input name="preset[seal_url]" type="url" class="regular-text" placeholder="https://..." /></td>
                         </tr>
                         <tr>
                             <th scope="row"><label>Image URL</label></th>
@@ -286,6 +286,7 @@ class WP_Huadev_Envelope {
                         <tr>
                             <th><?php echo esc_html__('Slug', 'wp-huadev-envelope'); ?></th>
                             <th><?php echo esc_html__('Name', 'wp-huadev-envelope'); ?></th>
+                            <th><?php echo esc_html__('Seal URL', 'wp-huadev-envelope'); ?></th>
                             <th><?php echo esc_html__('Shortcode', 'wp-huadev-envelope'); ?></th>
                             <th><?php echo esc_html__('Embed Snippet', 'wp-huadev-envelope'); ?></th>
                         </tr>
@@ -295,6 +296,13 @@ class WP_Huadev_Envelope {
                             <tr>
                                 <td><code><?php echo esc_html($p['slug']); ?></code></td>
                                 <td><?php echo esc_html($p['name']); ?></td>
+                                <td>
+                                    <?php if (!empty($p['seal_url'])): ?>
+                                        <a href="<?php echo esc_url($p['seal_url']); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($p['seal_url']); ?></a>
+                                    <?php else: ?>
+                                        <em><?php echo esc_html__('(none)', 'wp-huadev-envelope'); ?></em>
+                                    <?php endif; ?>
+                                </td>
                                 <td><code>[huadev_envelope slug="<?php echo esc_attr($p['slug']); ?>"]</code></td>
                                 <td>
                                     <textarea readonly rows="2" style="width:100%;" onclick="this.select()">&lt;script src="<?php echo esc_url(plugins_url('assets/js/embed.js', __FILE__)); ?>" data-preset="<?php echo esc_attr($p['slug']); ?>" data-endpoint="<?php echo esc_url($endpoint_base); ?>"&gt;&lt;/script&gt;</textarea>

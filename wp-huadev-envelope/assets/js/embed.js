@@ -8,6 +8,7 @@
   var p2 = script && script.getAttribute('data-pocket2');
   var emoji = script && script.getAttribute('data-emoji');
   var image = script && script.getAttribute('data-image');
+  var sealUrl = script && script.getAttribute('data-seal-url');
   var floating = script && script.getAttribute('data-float');
 
   function createContainer(){
@@ -54,7 +55,13 @@
 
     var seal = document.createElement('div');
     seal.className = 'seal';
-    seal.setAttribute('data-emoji', opts.seal_emoji || '💍');
+    if (opts.seal_url) {
+      seal.style.backgroundImage = "url('" + opts.seal_url + "')";
+      seal.style.backgroundSize = 'cover';
+      seal.style.backgroundPosition = 'center';
+    } else {
+      seal.setAttribute('data-emoji', opts.seal_emoji || '💍');
+    }
 
     var letter = document.createElement('div');
     letter.className = 'letter';
@@ -85,6 +92,7 @@
       pocket_color1: p1,
       pocket_color2: p2,
       seal_emoji: emoji,
+      seal_url: sealUrl,
       image_url: image,
       float: coerceBool(floating)
     };
