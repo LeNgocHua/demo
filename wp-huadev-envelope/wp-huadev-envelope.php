@@ -22,6 +22,7 @@ class WP_Huadev_Envelope {
         add_action('init', [__CLASS__, 'register_shortcodes']);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
         add_action('admin_menu', [__CLASS__, 'register_admin_page']);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'admin_enqueue']);
         add_action('admin_init', [__CLASS__, 'register_settings']);
         add_action('rest_api_init', [__CLASS__, 'register_rest']);
     }
@@ -122,6 +123,16 @@ class WP_Huadev_Envelope {
             'dashicons-email-alt2',
             56
         );
+    }
+
+    public static function admin_enqueue($hook) {
+        if (!isset($_GET['page']) || $_GET['page'] !== 'wp-huadev-envelope') {
+            return;
+        }
+        // Media library and admin helpers for picking images
+        wp_enqueue_media();
+        $base_url = plugins_url('', __FILE__);
+        wp_enqueue_script('huadev-envelope-admin', $base_url . '/assets/js/admin.js', ['jquery'], '1.0.0', true);
     }
 
     public static function register_settings() {
@@ -261,12 +272,20 @@ class WP_Huadev_Envelope {
                             <td><input name="preset[pocket_color2]" type="text" class="regular-text" placeholder="#a84644" /></td>
                         </tr>
                         <tr>
-                            <th scope="row"><label>Seal URL</label></th>
-                            <td><input name="preset[seal_url]" type="url" class="regular-text" placeholder="https://..." /></td>
+                            <th scope="row"><label for="preset_seal_url">Seal URL</label></th>
+                            <td>
+                                <input name="preset[seal_url]" id="preset_seal_url" type="url" class="regular-text" placeholder="https://..." />
+                                <button type="button" class="button huadev-media-button" data-target="preset_seal_url" data-preview="preset_seal_url_preview"><?php echo esc_html__('Select from Media', 'wp-huadev-envelope'); ?></button>
+                                <img id="preset_seal_url_preview" src="" alt="" style="max-width:48px; max-height:48px; margin-left:8px; display:none; border-radius:4px;" />
+                            </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label>Image URL</label></th>
-                            <td><input name="preset[image_url]" type="url" class="regular-text" placeholder="https://..." /></td>
+                            <th scope="row"><label for="preset_image_url">Image URL</label></th>
+                            <td>
+                                <input name="preset[image_url]" id="preset_image_url" type="url" class="regular-text" placeholder="https://..." />
+                                <button type="button" class="button huadev-media-button" data-target="preset_image_url" data-preview="preset_image_url_preview"><?php echo esc_html__('Select from Media', 'wp-huadev-envelope'); ?></button>
+                                <img id="preset_image_url_preview" src="" alt="" style="max-width:64px; max-height:48px; margin-left:8px; display:none; border-radius:4px;" />
+                            </td>
                         </tr>
                         <tr>
                             <th scope="row"><label>Float Animation</label></th>
@@ -286,7 +305,7 @@ class WP_Huadev_Envelope {
                         <tr>
                             <th><?php echo esc_html__('Slug', 'wp-huadev-envelope'); ?></th>
                             <th><?php echo esc_html__('Name', 'wp-huadev-envelope'); ?></th>
-                            <th><?php echo esc_html__('Seal URL', 'wp-huadev-envelope'); ?></th>
+                            <th><?php echo esc_html__('Seal', 'wp-huadev-envelope'); ?></th>
                             <th><?php echo esc_html__('Shortcode', 'wp-huadev-envelope'); ?></th>
                             <th><?php echo esc_html__('Embed Snippet', 'wp-huadev-envelope'); ?></th>
                         </tr>
@@ -298,7 +317,7 @@ class WP_Huadev_Envelope {
                                 <td><?php echo esc_html($p['name']); ?></td>
                                 <td>
                                     <?php if (!empty($p['seal_url'])): ?>
-                                        <a href="<?php echo esc_url($p['seal_url']); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($p['seal_url']); ?></a>
+                                        <img src="<?php echo esc_url($p['seal_url']); ?>" alt="seal" style="width:36px; height:36px; object-fit:cover; border-radius:50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);" />
                                     <?php else: ?>
                                         <em><?php echo esc_html__('(none)', 'wp-huadev-envelope'); ?></em>
                                     <?php endif; ?>
