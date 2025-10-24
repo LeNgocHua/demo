@@ -24,7 +24,7 @@ class WP_Huadev_Envelope_Presets {
             image_url TEXT,
             float_animation TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             UNIQUE KEY slug (slug)
         ) {$charset_collate};";
@@ -89,8 +89,9 @@ class WP_Huadev_Envelope_Presets {
             'seal_emoji' => $fields['seal_emoji'],
             'image_url' => $fields['image_url'],
             'float_animation' => $fields['float_animation'],
+            'updated_at' => current_time('mysql', 1),
         ], [ 'slug' => sanitize_title($slug) ], [
-            '%s','%s','%s','%s','%s','%s','%s','%d'
+            '%s','%s','%s','%s','%s','%s','%s','%d','%s'
         ], ['%s']);
         if ($ok === false) {
             return new WP_Error('db_error', __('Failed to update preset', 'wp-huadev-envelope'));

@@ -39,10 +39,10 @@
     injectStyles();
     var container = createContainer();
     container.style.background = opts.bg_color || '#f8f4f2';
-    var env = document.createElement('div');
-    env.className = 'envelope' + (opts.float ? ' floating' : '');
-    env.style.backgroundColor = opts.envelope_color || '#812927';
-    env.onclick = function(){ env.classList.toggle('open'); };
+    var envelopeEl = document.createElement('div');
+    envelopeEl.className = 'envelope' + (opts.float ? ' floating' : '');
+    envelopeEl.style.backgroundColor = opts.envelope_color || '#812927';
+    envelopeEl.onclick = function(){ envelopeEl.classList.toggle('open'); };
 
     var flap = document.createElement('div');
     flap.className = 'flap';
@@ -65,11 +65,11 @@
     img.height = 100;
     letter.appendChild(img);
 
-    env.appendChild(flap);
-    env.appendChild(pocket);
-    env.appendChild(seal);
-    env.appendChild(letter);
-    container.appendChild(env);
+    envelopeEl.appendChild(flap);
+    envelopeEl.appendChild(pocket);
+    envelopeEl.appendChild(seal);
+    envelopeEl.appendChild(letter);
+    container.appendChild(envelopeEl);
 
     script.parentNode.insertBefore(container, script);
   }

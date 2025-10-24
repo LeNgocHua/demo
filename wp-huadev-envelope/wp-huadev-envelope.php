@@ -159,10 +159,14 @@ class WP_Huadev_Envelope {
         $defaults = self::default_options();
         $sanitized = [];
 
-        $sanitized['bg_color'] = isset($input['bg_color']) ? sanitize_hex_color($input['bg_color']) : $defaults['bg_color'];
-        $sanitized['envelope_color'] = isset($input['envelope_color']) ? sanitize_hex_color($input['envelope_color']) : $defaults['envelope_color'];
-        $sanitized['pocket_color1'] = isset($input['pocket_color1']) ? sanitize_hex_color($input['pocket_color1']) : $defaults['pocket_color1'];
-        $sanitized['pocket_color2'] = isset($input['pocket_color2']) ? sanitize_hex_color($input['pocket_color2']) : $defaults['pocket_color2'];
+        $c = isset($input['bg_color']) ? sanitize_hex_color($input['bg_color']) : '';
+        $sanitized['bg_color'] = $c ? $c : $defaults['bg_color'];
+        $c = isset($input['envelope_color']) ? sanitize_hex_color($input['envelope_color']) : '';
+        $sanitized['envelope_color'] = $c ? $c : $defaults['envelope_color'];
+        $c = isset($input['pocket_color1']) ? sanitize_hex_color($input['pocket_color1']) : '';
+        $sanitized['pocket_color1'] = $c ? $c : $defaults['pocket_color1'];
+        $c = isset($input['pocket_color2']) ? sanitize_hex_color($input['pocket_color2']) : '';
+        $sanitized['pocket_color2'] = $c ? $c : $defaults['pocket_color2'];
         $sanitized['seal_emoji'] = isset($input['seal_emoji']) ? wp_kses_post($input['seal_emoji']) : $defaults['seal_emoji'];
         $sanitized['image_url'] = isset($input['image_url']) ? esc_url_raw($input['image_url']) : $defaults['image_url'];
         $sanitized['float'] = !empty($input['float']);
@@ -322,13 +326,12 @@ class WP_Huadev_Envelope {
         register_rest_route('huadev/v1', '/presets', [
             'methods' => 'GET',
             'callback' => function(WP_REST_Request $req) {
-                if (!current_user_can('manage_options')) {
-                    return new WP_Error('forbidden', __('Unauthorized', 'wp-huadev-envelope'), ['status' => 403]);
-                }
                 $items = WP_Huadev_Envelope_Presets::all();
                 return rest_ensure_response(['success' => true, 'data' => $items]);
             },
-            'permission_callback' => '__return_true',
+            'permission_callback' => function() {
+                return current_user_can('manage_options');
+            },
         ]);
 
         // Get preset by slug (public)
@@ -340,7 +343,9 @@ class WP_Huadev_Envelope {
                 if (!$item) {
                     return new WP_Error('not_found', __('Preset not found', 'wp-huadev-envelope'), ['status' => 404]);
                 }
-                return rest_ensure_response(['success' => true, 'data' => $item]);
+                $resp = new WP_REST_Response(['success' => true, 'data' => $item]);
+                $resp->header('Access-Control-Allow-Origin', '*');
+                return $resp;
             },
             'permission_callback' => '__return_true',
         ]);
