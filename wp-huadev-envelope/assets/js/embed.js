@@ -98,13 +98,28 @@
     };
   }
 
+  function buildUrl(ep, slug){
+    if (!ep) return null;
+    var url = String(ep);
+    // Trim trailing slash for consistent concatenation
+    if (url.length > 1 && url[url.length - 1] === '/') url = url.slice(0, -1);
+    if (!slug) return url;
+    if (/\/presets(\/|$)/.test(url)) {
+      return url + '/' + encodeURIComponent(slug);
+    }
+    if (/\/huadev\/v1$/.test(url)) {
+      return url + '/presets/' + encodeURIComponent(slug);
+    }
+    if (/\/wp-json$/.test(url)) {
+      return url + '/huadev/v1/presets/' + encodeURIComponent(slug);
+    }
+    // Fallback: don't modify if unknown format
+    return url;
+  }
+
   function fetchOptions(){
     if (!endpoint) return Promise.resolve(null);
-    var url = endpoint;
-    if (presetSlug && !/\/presets\//.test(url)) {
-      if (url[url.length - 1] === '/') url = url.slice(0, -1);
-      url = url + '/' + encodeURIComponent(presetSlug);
-    }
+    var url = buildUrl(endpoint, presetSlug);
     return fetch(url, { credentials: 'omit' })
       .then(function(r){ return r.json(); })
       .then(function(j){ return j && j.data ? j.data : null; })
