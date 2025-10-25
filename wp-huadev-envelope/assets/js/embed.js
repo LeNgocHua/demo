@@ -3,7 +3,7 @@
   var endpoint = script && script.getAttribute('data-endpoint'); // can be base e.g. https://site.com/wp-json/huadev/v1/presets
   var presetSlug = script && script.getAttribute('data-preset');
   var bg = script && script.getAttribute('data-bg');
-  var env = script && script.getAttribute('data-envelope');
+  var envelopeColor = script && script.getAttribute('data-envelope');
   var p1 = script && script.getAttribute('data-pocket1');
   var p2 = script && script.getAttribute('data-pocket2');
   var emoji = script && script.getAttribute('data-emoji');
@@ -88,7 +88,7 @@
   function fromAttributes(){
     return {
       bg_color: bg,
-      envelope_color: env,
+      envelope_color: envelopeColor,
       pocket_color1: p1,
       pocket_color2: p2,
       seal_emoji: emoji,

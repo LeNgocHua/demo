@@ -233,7 +233,8 @@ class WP_Huadev_Envelope {
             }
         }
 
-        $endpoint_base = rest_url('huadev/v1/presets');
+        // Prefer base REST root; embed.js will compose full URL
+        $endpoint_base = rest_url();
         $editing = null;
         $view = 'list';
         if (isset($_GET['slug']) && is_string($_GET['slug'])) {
@@ -399,8 +400,8 @@ class WP_Huadev_Envelope {
             },
         ]);
 
-        // Get preset by slug (public)
-        register_rest_route('huadev/v1', '/presets/(?P<slug>[a-z0-9\-]+)', [
+        // Get preset by slug (public). Support uppercase and underscores in slugs too.
+        register_rest_route('huadev/v1', '/presets/(?P<slug>[A-Za-z0-9_\-]+)', [
             'methods' => 'GET',
             'callback' => function(WP_REST_Request $req) {
                 $slug = $req->get_param('slug');
